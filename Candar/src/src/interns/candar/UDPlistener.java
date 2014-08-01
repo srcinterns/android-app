@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import android.graphics.Color;
 import android.util.Log;
@@ -88,7 +89,7 @@ public class UDPlistener extends Thread{
 	{
 		for(int i = 0; i < 512; i++)
 		{
-			colorArray[i] = (array[i] * (Color.parseColor("blue") - Color.parseColor("black"))) + Color.parseColor("black");
+			colorArray[i] = Color.HSVToColor(new float[]{(float) 255 - (array[i] & 0x00FF),1.0f,1.0f});
 		}
 		
 	}
