@@ -8,19 +8,31 @@ import android.support.v7.app.ActionBarActivity;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.TextureView;
 
 public class MainActivity extends ActionBarActivity implements Listener {
 	
 	ArrayList<Integer> colorArray = new ArrayList<Integer>();
+	UDPlistener listener = new UDPlistener(this);
 	int offset = 0;
+	TextureView tv;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		(new Thread (new UDPlistener())).start();
+		listener.start();
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		tv = (TextureView)findViewById(R.id.textureView1);
+	}
+	
+	
+	@Override
+	public void onDestroy(){
+		super.onDestroy();
+		listener.end();
 	}
 
 	@Override
@@ -44,16 +56,17 @@ public class MainActivity extends ActionBarActivity implements Listener {
 
 	@Override
 	public void update(int[] array) {
-		for(int i = 0; i < array.length; i++)
+		for(int i = 0; i < 512; i++)
 		{
-			colorArray.add(i);
+			colorArray.add(array[i]);
 		}
 		int[] colors = new int[colorArray.size()];
 		colors = convertIntegers(colorArray);
-		updateOffset(colors);
+		//updateOffset(colors);
 		Canvas canvas = new Canvas();
 		Paint paint = new Paint();
-		canvas.drawBitmap(colors, offset, 20, 0, 0, 1200, 20, false, paint);
+		canvas.drawBitmap(colors, offset, 512, 0, 0, 512, 1, false, paint);
+		tv.draw(canvas);
 	}
 	
 	public static int[] convertIntegers(List<Integer> integers)

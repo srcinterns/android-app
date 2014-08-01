@@ -1,11 +1,12 @@
 package src.interns.candar;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+
+import android.util.Log;
 
 public class UDPlistener extends Thread{
 	private DatagramSocket socket;
@@ -17,28 +18,33 @@ public class UDPlistener extends Thread{
 	private final int COLOR_MAP = -16711425;
 	private final int COLOR_MIN = -65536;
 	Listener listener;
+	boolean run = true;
 	
 	@Override
 	public void run()
 	{
 		try {
 			packet = new DatagramPacket(bytes, bytes.length);
-			socket = new DatagramSocket(12345);
+			socket = new DatagramSocket(18888);
+			socket.setBroadcast(true);
 		} catch (SocketException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		while(isAlive())
+		while(run)
 		{
 			try
 			{
 				packet.setLength(bytes.length);
 				socket.receive(packet);
+				Log.d("UDP listener", "Received message");
 				ByteBuffer buffer = ByteBuffer.wrap(bytes);
 				buffer.get();
 				int timeInt = buffer.getInt();
-				timeStamp = (long)timeInt;
+				timeStamp = (long)(timeInt & 0x00000000FFFFFFFF);
+				removeBytesFromStart(buffer, 5);
 				array = buffer.array();
+				Log.d("Color Length", "" + array.length);
 				byteToInt(array);
 				UpdateListener(listener);
 			}
@@ -46,13 +52,32 @@ public class UDPlistener extends Thread{
 			{
 				ex.printStackTrace();
 			}
-			finally
-			{
-				socket.close();
-			}
 		}
 	}
-		
+	
+	
+	public void removeBytesFromStart(ByteBuffer bf, int n) {
+		int index = 0;
+	    for(int i = n; i < bf.limit(); i++) {
+	        bf.put(index++, bf.get(i));
+	        bf.put(i, (byte)0);
+	    }
+	    bf.position(bf.position()-n);
+	}
+	
+	
+	public UDPlistener(Listener listener)
+	{
+		super();
+		this.listener = listener;
+	}
+	
+	public void end()
+	{
+		run = false;
+		socket.close();
+	}
+	
 	public void UpdateListener(Listener listener)
 	{
 		listener.update(colorArray);
@@ -60,7 +85,7 @@ public class UDPlistener extends Thread{
 	
 	public void byteToInt(byte[] array)
 	{
-		for(int i = 0; i < array.length; i++)
+		for(int i = 0; i < 512; i++)
 		{
 			colorArray[i] = (array[i] * (COLOR_MAP)) + COLOR_MIN;
 		}

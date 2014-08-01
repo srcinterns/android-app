@@ -10,7 +10,7 @@
 
     <TextureView
         android:id="@+id/textureView1"
-        android:layout_width="wrap_content"
+        android:layout_width="512px"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_centerVertical="true" />
