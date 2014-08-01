@@ -2,6 +2,6 @@ package src.interns.candar;
 
 public interface Listener {
 	
-	public void update(int[] colorArray);
+	public void update(int[] array);
 
 }
