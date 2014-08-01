@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
+import android.graphics.Color;
 import android.util.Log;
 
 public class UDPlistener extends Thread{
@@ -45,8 +46,7 @@ public class UDPlistener extends Thread{
 				timeStamp = (long)(timeInt & 0x00000000FFFFFFFF);
 				removeBytesFromStart(buffer, 5);
 				array = buffer.array();
-				Log.d("Color Length", "" + array.length);
-				byteToInt(array);
+				byteToInt(array);				
 				UpdateListener(listener);
 			}
 			catch(IOException ex)
@@ -88,7 +88,7 @@ public class UDPlistener extends Thread{
 	{
 		for(int i = 0; i < 512; i++)
 		{
-			colorArray[i] = (array[i] * (COLOR_MAP)) + COLOR_MIN;
+			colorArray[i] = (array[i] * (Color.parseColor("blue") - Color.parseColor("black"))) + Color.parseColor("black");
 		}
 		
 	}
