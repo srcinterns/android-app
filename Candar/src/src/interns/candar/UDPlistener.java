@@ -17,9 +17,6 @@ public class UDPlistener extends Thread{
 	private long timeStamp;
 	private byte[] array = new byte[512];
 	private int[] colorArray = new int[512];
-    private final int COLOR_MIN = 0x000000FF;
-    private final int COLOR_MAX = 0x00FF0000;
-    private final int COLOR_MAP = COLOR_MAX - COLOR_MIN;
 	Listener listener;
 	boolean run = true;
 	
