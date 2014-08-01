@@ -2,12 +2,17 @@ package src.interns.candar;
 
 import android.app.Activity;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.SurfaceTexture;
 import android.os.Bundle;
+import android.provider.CalendarContract;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.TextureView;
 import android.widget.FrameLayout;
+
+import java.util.Arrays;
+
 
 @SuppressWarnings({"UnusedDeclaration"})
 public class MainActivity extends Activity implements TextureView.SurfaceTextureListener {
@@ -25,7 +30,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         mTextureView.setSurfaceTextureListener(this);
         mTextureView.setOpaque(false);
 
-        content.addView(mTextureView, new FrameLayout.LayoutParams(500, 500, Gravity.CENTER));
+        content.addView(mTextureView, new FrameLayout.LayoutParams(500, 800, Gravity.CENTER));
         setContentView(content);
     }
 
@@ -57,7 +62,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private static class RenderingThread extends Thread implements Listener {
         private final TextureView mSurface;
         private volatile boolean mRunning = true;
-        private int[] colors;
+        private RotatingArray data = new RotatingArray(512, 800, 10); // TODO: Replace these with width/height constants
 
         public RenderingThread(TextureView surface) {
             mSurface = surface;
@@ -65,7 +70,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         @Override
         public void update(int[] colorArray) {
-            colors = colorArray;
+            data.append(colorArray);
         }
 
         @Override
@@ -74,8 +79,8 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             while (mRunning && !Thread.interrupted()) {
                 final Canvas canvas = mSurface.lockCanvas(null);
                 try {
-                    if (null == colors) continue;
-                    canvas.drawBitmap(colors, 0, 512, 0, 0, 512, 1, false, null);
+                    int[] moo = data.getArray();
+                    canvas.drawBitmap(moo, data.getOffset(), 512, 0, 0, 512, 800, false, null);
                 } catch (Exception e) {
                     Log.e("RenderThread", "Exception: " + e);
                 } finally {
