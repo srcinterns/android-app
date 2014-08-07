@@ -5,26 +5,23 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import android.graphics.Color;
 import android.util.Log;
 
 public class UDPlistener extends Thread{
 	private DatagramSocket socket;
-	private byte[] bytes = new byte[518];
 	private DatagramPacket packet;
-	private long timeStamp;
-	private byte[] array = new byte[512];
-	private int[] colorArray = new int[512];
-	Listener listener;
-	boolean run = true;
+	private byte[] packetArray = new byte[6];
+	private int segment;
+	private int index;
+	private int[] pointArray = new int[1000];
+	private Listener listener;
+	private boolean run = true;
 	
 	@Override
 	public void run()
 	{
 		try {
-			packet = new DatagramPacket(bytes, bytes.length);
+			packet = new DatagramPacket(packetArray, packetArray.length);
 			socket = new DatagramSocket(18888);
 			socket.setBroadcast(true);
 		} catch (SocketException e1) {
@@ -35,17 +32,19 @@ public class UDPlistener extends Thread{
 		{
 			try
 			{
-				packet.setLength(bytes.length);
+				packet.setLength(packetArray.length);
 				socket.receive(packet);
 				Log.d("UDP listener", "Received message");
-				ByteBuffer buffer = ByteBuffer.wrap(bytes);
-				buffer.get();
-				int timeInt = buffer.getInt();
-				timeStamp = (long)(timeInt & 0x00000000FFFFFFFF);
-				removeBytesFromStart(buffer, 5);
-				array = buffer.array();
-				byteToInt(array);				
-				UpdateListener(listener);
+				ByteBuffer buffer = ByteBuffer.wrap(packetArray);
+				segment = buffer.getInt();
+				index = (int)buffer.getShort();
+				pointArray[index] = -256;
+				if(segment == (segment + 1))
+				{
+					UpdateListener(listener);
+					int[] newArray = new int[1000];
+					pointArray = newArray;
+				}
 			}
 			catch(IOException ex)
 			{
@@ -54,15 +53,6 @@ public class UDPlistener extends Thread{
 		}
 	}
 	
-	
-	public void removeBytesFromStart(ByteBuffer bf, int n) {
-		int index = 0;
-	    for(int i = n; i < bf.limit(); i++) {
-	        bf.put(index++, bf.get(i));
-	        bf.put(i, (byte)0);
-	    }
-	    bf.position(bf.position()-n);
-	}
 	
 	
 	public UDPlistener(Listener listener)
@@ -79,26 +69,7 @@ public class UDPlistener extends Thread{
 	
 	public void UpdateListener(Listener listener)
 	{
-		listener.update(colorArray);
+		listener.update(pointArray);
 	}
 	
-	public void byteToInt(byte[] array)
-	{
-		for(int i = 0; i < 512; i++)
-		{
-			colorArray[i] = Color.HSVToColor(new float[]{(float) 255 - (array[i] & 0x00FF),1.0f,1.0f});
-		}
-		
-	}
-	
-	public long getTimeStamp()
-	{
-		return timeStamp;
-	}
-	
-	public int[] getColorArray()
-	{
-		return colorArray;
-	}
-
 }

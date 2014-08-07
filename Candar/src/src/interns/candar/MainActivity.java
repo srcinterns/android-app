@@ -1,42 +1,85 @@
 package src.interns.candar;
 
-import java.util.Iterator;
-import java.util.List;
+
 import android.app.Activity;
 import android.graphics.Canvas;
+import android.graphics.Point;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.GradientDrawable.Orientation;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.Gravity;
 import android.view.TextureView;
+import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.HorizontalScrollView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
-@SuppressWarnings({"UnusedDeclaration"})
+
 public class MainActivity extends Activity implements TextureView.SurfaceTextureListener {
     private TextureView mTextureView;
     private MainActivity.RenderingThread mThread;
     private UDPlistener mUdp;
+    private static int height;
+    private static int width;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        LinearLayout content = new LinearLayout(this);
+        final HorizontalScrollView hview = new HorizontalScrollView(this);
+        LinearLayout linLay = new LinearLayout(this);
 
-        FrameLayout content = new FrameLayout(this);
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        height = size.y - 60;
+        Log.d("Height", "" + height);
+        width = size.x;
+        Log.d("Width", "" + width);
 
         mTextureView = new TextureView(this);
         mTextureView.setSurfaceTextureListener(this);
         mTextureView.setOpaque(false);
+        
+        
+        content.addView(hview, new FrameLayout.LayoutParams(width, height, Gravity.CENTER));
+        hview.addView(linLay, new FrameLayout.LayoutParams(width, height, Gravity.CENTER));
+        linLay.addView(mTextureView, new FrameLayout.LayoutParams(1000, height, Gravity.START));
+        
+        setContentView(content);        
+        hview.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
+        hview.setScrollbarFadingEnabled(false);
 
-        content.addView(mTextureView, new FrameLayout.LayoutParams(500, 800, Gravity.CENTER));
-        setContentView(content);
+       
     }
 
     @Override
-    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+    public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, final int height) {
         mThread = new RenderingThread(mTextureView);
         mUdp = new UDPlistener(mThread);
         mThread.start();
         mUdp.start();
+        /*int[] colorArray = new int[1000];
+        for(int i = 0; i < 1000; i++)
+		{
+			colorArray[i] = -256;
+		}
+        final int[] colors = colorArray;
+        new Thread(new Runnable(){
+        	@Override
+        	public void run()
+        	{
+        		for(int i = 0; i < 600; i++)
+                {
+        			mThread.update(colors);
+                }
+        	}
+        }).start();*/
     }
 
     @Override
@@ -55,11 +98,14 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         // Ignored
     }
+    
+    
+    
 
     private static class RenderingThread extends Thread implements Listener {
         private final TextureView mSurface;
         private volatile boolean mRunning = true;
-        private RotatingArray data = new RotatingArray(512, 800, 10); // TODO: Replace these with width/height constants
+        private RotatingArray data = new RotatingArray(1000, height, 10); // TODO: Replace these with width/height constants
 
 
         public RenderingThread(TextureView surface) {
@@ -70,23 +116,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         public void update(int[] colorArray) {
             data.append(colorArray);
         }
-        
-        public static int[] convertIntegers(List<Integer> integers)
-    	{
-    	    int[] ret = new int[integers.size()*300];
-    	    Iterator<Integer> iterator = integers.iterator();
-    	    for (int i = 0; i < ret.length; i++)
-    	    {
-    	    	if(iterator.hasNext())
-    	    	{
-    	    		ret[i] = iterator.next().intValue();
-    	    	}
-    	    }
-    	    return ret;
-    	}
-        
-        
-        
+                
         
         @Override
         public void run() {
@@ -94,7 +124,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
             while (mRunning && !Thread.interrupted()) {
                 final Canvas canvas = mSurface.lockCanvas(null);
                 try {
-                    canvas.drawBitmap(data.getArray(), data.getOffset(), 512, 0, 0, 512, 800, false, null);
+                    canvas.drawBitmap(data.getArray(), data.getOffset(), 1000, 0, 0, 1000, height, false, null);
                 } catch (Exception e) {
                     Log.e("RenderThread", "Exception: " + e);
                 } finally {
