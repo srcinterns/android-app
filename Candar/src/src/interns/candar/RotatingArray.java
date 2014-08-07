@@ -11,6 +11,7 @@ public class RotatingArray {
 
     private int columns = 512;
     private int rows = 300;
+    private int segments = 10;
 
     private int offset = 0;
 
@@ -19,13 +20,14 @@ public class RotatingArray {
     public RotatingArray(int columns, int rows, int segments) {
         this.columns = columns;
         this.rows = rows;
+        this.segments = segments;
         this.data = new int[columns * rows * segments];
     }
 
     public void append(int[] array) {
         // We should be receiving a row's worth of data, error if not
         if (this.columns != array.length) {
-            throw new ArrayStoreException();
+            throw new ArrayStoreException("Array.length != this.columns");
         }
 
         // Check if we need to rotate back to the beginning of the buffer or not
@@ -55,5 +57,10 @@ public class RotatingArray {
     public int getOffset() {
         int ret = offset - (rows * columns);
         return (ret < 0) ? 0 : ret;
+    }
+
+    public void blank() {
+        this.offset = 0;
+        this.data = new int[columns * rows * segments];
     }
 }

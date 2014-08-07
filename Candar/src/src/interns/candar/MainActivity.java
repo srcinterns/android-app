@@ -8,10 +8,7 @@ import android.graphics.SurfaceTexture;
 import android.graphics.drawable.GradientDrawable.Orientation;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
-import android.view.Gravity;
-import android.view.TextureView;
-import android.view.View;
+import android.view.*;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -23,7 +20,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private MainActivity.RenderingThread mThread;
     private UDPlistener mUdp;
     private static int height;
-    private static int width;
+    private static int width = 2000;
 
 
 
@@ -39,7 +36,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         display.getSize(size);
         height = size.y - 60;
         Log.d("Height", "" + height);
-        width = size.x;
+        //width = size.x;
         Log.d("Width", "" + width);
 
         mTextureView = new TextureView(this);
@@ -49,14 +46,19 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         
         content.addView(hview, new FrameLayout.LayoutParams(width, height, Gravity.CENTER));
         hview.addView(linLay, new FrameLayout.LayoutParams(width, height, Gravity.CENTER));
-        linLay.addView(mTextureView, new FrameLayout.LayoutParams(1000, height, Gravity.START));
+        linLay.addView(mTextureView, new FrameLayout.LayoutParams(width, height, Gravity.START));
         
         setContentView(content);        
         hview.setScrollBarStyle(View.SCROLLBARS_OUTSIDE_OVERLAY);
         hview.setScrollbarFadingEnabled(false);
-
-       
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
 
     @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, final int height) {
@@ -64,6 +66,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         mUdp = new UDPlistener(mThread);
         mThread.start();
         mUdp.start();
+        mThread.clear();
         /*int[] colorArray = new int[1000];
         for(int i = 0; i < 1000; i++)
 		{
@@ -98,14 +101,19 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     public void onSurfaceTextureUpdated(SurfaceTexture surface) {
         // Ignored
     }
-    
-    
-    
+
+    public void handleReset(MenuItem item) {
+        mUdp.current_segment = -1;
+        mThread.clear();
+    }
+
 
     private static class RenderingThread extends Thread implements Listener {
         private final TextureView mSurface;
         private volatile boolean mRunning = true;
-        private RotatingArray data = new RotatingArray(1000, height, 10); // TODO: Replace these with width/height constants
+        private volatile boolean mUpdated = false;
+        private volatile boolean mClear = false;
+        private RotatingArray data = new RotatingArray(width, height, 1); // TODO: Replace these with width/height constants
 
 
         public RenderingThread(TextureView surface) {
@@ -114,28 +122,44 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
 
         @Override
         public void update(int[] colorArray) {
+            this.mUpdated = true;
             data.append(colorArray);
         }
                 
-        
+        public void clear() {
+            this.mClear = true;
+            this.mUpdated = true;
+        }
+
         @Override
         public void run() {
 
             while (mRunning && !Thread.interrupted()) {
+                // Wait until we receive notice of an update
+                while (!mUpdated) {
+                    Thread.yield();
+                }
+                mUpdated = false;
+
+                if (mClear) {
+                    mClear = false;
+                    Canvas canvas = mSurface.lockCanvas(null);
+                    canvas.drawColor(0xFF000000);
+                    mSurface.unlockCanvasAndPost(canvas);
+                    System.gc();
+                    data.blank();
+                    continue;
+                }
+
                 final Canvas canvas = mSurface.lockCanvas(null);
                 try {
-                    canvas.drawBitmap(data.getArray(), data.getOffset(), 1000, 0, 0, 1000, height, false, null);
+                    canvas.drawBitmap(data.getArray(), data.getOffset(), width, 0, 0, width, height, false, null);
                 } catch (Exception e) {
                     Log.e("RenderThread", "Exception: " + e);
                 } finally {
                     mSurface.unlockCanvasAndPost(canvas);
                 }
 
-                try {
-                    Thread.sleep(15);
-                } catch (InterruptedException e) {
-                    // Interrupted
-                }
             }
         }
 
