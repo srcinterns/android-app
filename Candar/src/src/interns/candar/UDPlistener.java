@@ -9,9 +9,7 @@ import android.util.Log;
 
 public class UDPlistener extends Thread{
 	private DatagramSocket socket;
-	private DatagramPacket packet;
-	private byte[] packetArray = new byte[6];
-	private int segment;
+	private int current_segment = -1;
 	private int index;
 	private int[] pointArray = new int[1000];
 	private Listener listener;
@@ -20,8 +18,9 @@ public class UDPlistener extends Thread{
 	@Override
 	public void run()
 	{
+        int segment;
+        DatagramPacket packet;
 		try {
-			packet = new DatagramPacket(packetArray, packetArray.length);
 			socket = new DatagramSocket(18888);
 			socket.setBroadcast(true);
 		} catch (SocketException e1) {
@@ -32,18 +31,22 @@ public class UDPlistener extends Thread{
 		{
 			try
 			{
-				packet.setLength(packetArray.length);
+                packet = new DatagramPacket(new byte[6], 6);
 				socket.receive(packet);
 				Log.d("UDP listener", "Received message");
-				ByteBuffer buffer = ByteBuffer.wrap(packetArray);
+				ByteBuffer buffer = ByteBuffer.wrap(packet.getData());
 				segment = buffer.getInt();
-				index = (int)buffer.getShort();
-				pointArray[index] = -256;
-				if(segment == (segment + 1))
+				index = (int) buffer.getShort() & 0x0000FFFF;
+                try {
+                    pointArray[index] = -256;
+                } catch (IndexOutOfBoundsException e) {
+                    Log.e("UDP", "Index out of bounds! Received:" + index);
+                }
+				if(this.current_segment < segment)
 				{
+                    this.current_segment = segment;
 					UpdateListener(listener);
-					int[] newArray = new int[1000];
-					pointArray = newArray;
+					pointArray = new int[1000];
 				}
 			}
 			catch(IOException ex)
