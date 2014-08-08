@@ -11,7 +11,7 @@ public class UDPlistener extends Thread{
 	private DatagramSocket socket;
 	public int current_segment = -1;
 	private int index;
-	private int[] pointArray = new int[1000];
+	private int[] pointArray = new int[2000];
 	private Listener listener;
 	private boolean run = true;
 	
@@ -46,7 +46,7 @@ public class UDPlistener extends Thread{
 				{
                     this.current_segment = segment;
 					UpdateListener(listener);
-					pointArray = new int[1000];
+					pointArray = new int[2000];
 				}
 			}
 			catch(IOException ex)
@@ -72,7 +72,7 @@ public class UDPlistener extends Thread{
 	
 	public void UpdateListener(Listener listener)
 	{
-		listener.update(pointArray);
+		listener.update(pointArray, current_segment+1);
 	}
 	
 }

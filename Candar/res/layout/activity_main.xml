@@ -20,8 +20,9 @@
         android:scrollbarAlwaysDrawVerticalTrack="true"
         android:scrollbarStyle="outsideOverlay" >
  
+     
  		<LinearLayout
-            android:id="@+id/lin3"
+            android:id="@+id/lin4"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal" >
@@ -33,8 +34,9 @@
                 android:scrollbarAlwaysDrawVerticalTrack="true"
                 android:scrollbars="horizontal" />
                
-		
+			
 		</LinearLayout>
+		
 
       
 	</HorizontalScrollView>
