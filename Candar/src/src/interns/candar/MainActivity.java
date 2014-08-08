@@ -8,10 +8,7 @@ import android.graphics.SurfaceTexture;
 import android.graphics.drawable.GradientDrawable.Orientation;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Display;
-import android.view.Gravity;
-import android.view.TextureView;
-import android.view.View;
+import android.view.*;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -59,11 +56,23 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    public void handleReset(MenuItem item) {
+        mUdp.current_segment = -1;
+        mThread.clear();
+    }
+
+    @Override
     public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, final int height) {
         mThread = new RenderingThread(mTextureView);
         mUdp = new UDPlistener(mThread);
         mThread.start();
         mUdp.start();
+        mThread.clear();
         /*int[] colorArray = new int[1000];
         for(int i = 0; i < 1000; i++)
 		{
@@ -105,7 +114,9 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
     private static class RenderingThread extends Thread implements Listener {
         private final TextureView mSurface;
         private volatile boolean mRunning = true;
-        private RotatingArray data = new RotatingArray(1000, height, 10); // TODO: Replace these with width/height constants
+        private volatile boolean mUpdated = false;
+        private volatile boolean mClear = false;
+        private RotatingArray data = new RotatingArray(1000, height, 5); // TODO: Replace these with width/height constants
 
 
         public RenderingThread(TextureView surface) {
@@ -115,6 +126,7 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         @Override
         public void update(int[] colorArray) {
             data.append(colorArray);
+            mUpdated = true;
         }
                 
         
@@ -122,6 +134,22 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
         public void run() {
 
             while (mRunning && !Thread.interrupted()) {
+                while (!mUpdated) {
+                    Thread.yield();
+                }
+                mUpdated = false;
+
+                if (mClear) {
+                    mClear = false;
+                    Canvas canvas = mSurface.lockCanvas(null);
+                    canvas.drawColor(0xFF000000);
+                    mSurface.unlockCanvasAndPost(canvas);
+                    System.gc();
+                    data = new RotatingArray(1000, height, 5);
+                    System.gc();
+                    continue;
+                }
+
                 final Canvas canvas = mSurface.lockCanvas(null);
                 try {
                     canvas.drawBitmap(data.getArray(), data.getOffset(), 1000, 0, 0, 1000, height, false, null);
@@ -131,17 +159,17 @@ public class MainActivity extends Activity implements TextureView.SurfaceTexture
                     mSurface.unlockCanvasAndPost(canvas);
                 }
 
-                try {
-                    Thread.sleep(15);
-                } catch (InterruptedException e) {
-                    // Interrupted
-                }
             }
         }
 
         void stopRendering() {
             interrupt();
             mRunning = false;
+        }
+
+        public void clear() {
+            this.mClear = true;
+            this.mUpdated = true;
         }
 
     }

@@ -9,7 +9,7 @@ import android.util.Log;
 
 public class UDPlistener extends Thread{
 	private DatagramSocket socket;
-	private int current_segment = -1;
+	public int current_segment = -1;
 	private int index;
 	private int[] pointArray = new int[1000];
 	private Listener listener;
